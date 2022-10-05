@@ -11,6 +11,7 @@ import numpy as np
 from sys_ident.identifications import Optimization
 from sys_ident.models import Monocopter
 from sys_ident.simulations import simulate_experiment
+from sys_ident.utils import generate_initial_params_lhs
 
 
 def main():
@@ -45,7 +46,7 @@ def main():
         signals_directory="/home/julius/Projects/system_identification/data",
     )
 
-    identification_signal_handler.filter_signals_by_time(0, 10)
+    identification_signal_handler.filter_signals_by_time(100.0, 110.0)
 
     identification_signal_handler.u *= 5.0 / 100.0
     identification_signal_handler.y = (
@@ -63,7 +64,7 @@ def main():
 
     x_0 = np.array([phi_0, phi_dot_0])
 
-    p_0 = np.array([60.0, 1100.0, 0.0])
+    # p_0 = np.array([60.0, 1100.0, 0.0])
 
     # plt.plot(covariance(identification_signal_handler.y))
     # plt.plot(
@@ -84,15 +85,22 @@ def main():
     ]
 
     monocopter = Monocopter()
-    optimization = Optimization(p_0, experiments, monocopter, "MLE", maxiter=10)
+    p_0 = generate_initial_params_lhs(
+        num_samples=10, p_bounds=np.array([[5.0, 100.0], [1050.0, 1500.0], [0.0, 10.0]])
+    )
+    optimization = Optimization(p_0, experiments, monocopter, "MLE")
 
-    optimization_result = optimization.run()[0]
+    optimization_result = optimization.run(max_iter=200)
     print(f"Optimal parameters: {optimization_result}")
+    # optimization_result = np.array([60.0, 1100.0, 0.0])
 
     fig, ax = plt.subplots()
-    y = simulate_experiment(experiments[0], monocopter, optimization_result)
-    ax.plot(experiments[0].t, y, label="Simulation")
     ax.plot(experiments[0].t, experiments[0].y, label="Ground truth")
+    ax.plot(experiments[0].t, experiments[0].u, label="Input")
+    for idx, result in enumerate(optimization_result):
+        y = simulate_experiment(experiments[0], monocopter, result)
+        ax.plot(experiments[0].t, y, label=f"Simulation {idx+1}")
+
     ax.legend()
     plt.show()
 
