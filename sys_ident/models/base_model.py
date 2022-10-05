@@ -10,13 +10,13 @@ class BaseModel(ABC):
     """
 
     @abstractmethod
-    def ode(self, t: float, x: np.ndarray, u: float, params: np.ndarray) -> np.ndarray:
+    def ode(self, x: np.ndarray, t: float, u: float, params: np.ndarray) -> np.ndarray:
         """
         A model must implement an ode method which represents the model's ordinary differential equation.
 
         Params:
-            t:      Float representing the current time
             x:      1D-Numpy array representing the model's state.
+            t:      Float representing the current time
             u:      Float representing the current input into the model. Currently only SISO models are considered.
             params:      1D-Numpy array representing the model's parameter vector.
         """
@@ -28,20 +28,9 @@ class BaseModel(ABC):
         A model must implement a measurement equation method.
 
         Params:
-
+            x:  A 1D-Numpy array representing the state of the model.
 
         Returns:
             Float that represents the measured value. Currently only SISO models are considered.
         """
         pass
-
-    # @abstractmethod
-    # def simulate(
-    #     self, measurements: list[Experiment], params: np.ndarray
-    # ) -> list[np.ndarray]:
-    #     """
-    #     A model must implement a simulate method. This extracts the initial state of the model from each of
-    #     the experiments in the 'measurements' parameter and simulates the system's responses to each of the
-    #     set of inputs which are also being extracted from the 'measurements'.
-    #     """
-    #     pass
