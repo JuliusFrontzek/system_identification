@@ -69,8 +69,12 @@ class SignalHandler:
         assert hasattr(self, "t"), "A time signal must be provided"
 
     @property
+    def sampling_step(self):
+        return self.t[1] - self.t[0]
+
+    @property
     def sampling_frequency(self):
-        return 1.0 / (self.t[1] - self.t[0])
+        return 1.0 / self.sampling_step
 
     def down_sample(self, n_th_element: int):
         for signal_name in self.signal_names:
@@ -87,11 +91,9 @@ class SignalHandler:
             signal = signal[start_idx:end_idx]
             setattr(self, signal_name, signal)
 
-    def show_signals(self, specific_signal=None):
+    def show_signals(self, signal_names: list[str] = None):
         fig, ax = plt.subplots()
-        if specific_signal is not None:
-            signal_names = [specific_signal]
-        else:
+        if signal_names is None:
             signal_names = self.signal_names.copy()
             signal_names.remove("t")
 
@@ -101,6 +103,42 @@ class SignalHandler:
         ax.legend()
 
         return fig
+
+    def move_signal(self, signal_name: str, delta_time: float, delay: bool):
+        """
+        Move a signal relative to the others by a given time delta.
+
+        Params:
+            signal_name: str
+                Name of the signal
+            delta_time: float
+                Time delta by which the signal will be moved approximately.
+                The maximum error that is introduced here is half the sampling frequency.
+            delay: bool
+                If True, the signal will be delayed, i.e. moved to the right on the time axis.
+                If False, the signal will be advanced, i.e. moved to the left on the time axis.
+        """
+        if signal_name == "t":
+            # It is not allowed to move the time but only actual signals.
+            return
+
+        num_indices_to_move = round(delta_time / self.sampling_step)
+        if delay:
+            for signal_name_ in self.signal_names:
+                signal_ = getattr(self, signal_name_)
+                if signal_name_ == signal_name:
+                    signal_ = signal_[:-num_indices_to_move]
+                else:
+                    signal_ = signal_[num_indices_to_move:]
+                setattr(self, signal_name_, signal_)
+        else:
+            for signal_name_ in self.signal_names:
+                signal_ = getattr(self, signal_name_)
+                if signal_name_ == signal_name:
+                    signal_ = signal_[num_indices_to_move:]
+                else:
+                    signal_ = signal_[:-num_indices_to_move]
+                setattr(self, signal_name_, signal_)
 
     def filter_signals_butterworth(self, order: int, cut_off_freq_mult_nyquist: float):
         """
