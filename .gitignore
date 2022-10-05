@@ -137,3 +137,6 @@ dmypy.json
 
 # Experimental data
 data/
+
+# Profiling
+*.prof
