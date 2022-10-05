@@ -9,8 +9,11 @@ class Monocopter(BaseModel):
         self.m = 0.1
         self.l = 0.17
         self.alpha = 17.0 * np.pi / 180.0
+        self.ode_parameter_combination = (
+            self.l / 2 * self.m * self.g * np.sin(self.alpha)
+        )
 
-    def ode(self, t: float, x: np.ndarray, u: float, params: np.ndarray) -> np.ndarray:
+    def ode(self, x: np.ndarray, t: float, u: float, params: np.ndarray) -> np.ndarray:
         """
         Model parameters:
             b:  Combines the rotational moment of inertia of the monocopter
@@ -24,15 +27,13 @@ class Monocopter(BaseModel):
         phi_dot = x[1]
 
         # Define parameters
-        b = params[0]
-        c = params[1]
-        d = params[2]
+        b, c, d = params
 
         # Compute results
         dphi_dt = phi_dot
         dphi2_dt2 = (
-            b * u**2 * self.l
-            - self.l / 2 * c * self.m * self.g * np.cos(phi) * np.sin(self.alpha)
+            self.l * b * u**2
+            - c * np.cos(phi) * self.ode_parameter_combination
             - d * phi_dot
         )
         return np.array([dphi_dt, dphi2_dt2])
@@ -43,14 +44,6 @@ class Monocopter(BaseModel):
 
         # Only the first state - the angle phi - is measured
         return phi
-
-    # def simulate(self, experiments: list[Experiment], params: np.ndarray):
-    #     y_sim = []
-    #     for experiment in experiments:
-    #         # Simulation
-    #         y_sim.append(simulate_experiment(experiment, self, params))
-
-    #     return np.array(y_sim)
 
 
 if __name__ == "__main__":
