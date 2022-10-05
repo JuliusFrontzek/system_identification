@@ -31,6 +31,15 @@ def covariance(X: np.ndarray) -> np.ndarray:
     return cov_fun
 
 
+def plot_covariance(t: np.ndarray, X: np.ndarray) -> None:
+    cov_fun = covariance(X)
+    fig, ax = plt.subplots()
+    ax.plot(t, cov_fun)
+    ax.set_xlabel("t")
+    ax.set_ylabel("Covariance")
+    plt.show()
+
+
 def cross_covariance_fixed_tau(X: np.ndarray, Y: np.ndarray, tau: int) -> float:
     N = len(X) - tau
     m_x = X.mean()
@@ -50,6 +59,15 @@ def cross_covariance(X: np.ndarray, Y: np.ndarray) -> np.ndarray:
     for i in range(N_x):
         cross_cov_fun[i] = cross_covariance_fixed_tau(X, Y, i)
     return cross_cov_fun
+
+
+def plot_cross_covariance(t: np.ndarray, X: np.ndarray, Y: np.ndarray) -> None:
+    cross_cov_fun = cross_covariance(X, Y)
+    fig, ax = plt.subplots()
+    ax.plot(t, cross_cov_fun)
+    ax.set_xlabel("t")
+    ax.set_ylabel("Covariance")
+    plt.show()
 
 
 class SignalHandler:
@@ -184,6 +202,12 @@ class Experiment:
     u: np.ndarray
     y: np.ndarray
     x_0: np.ndarray
+
+    def __str__(self):
+        return f"Experiment with {self.t.shape[0]} datapoints."
+
+    def __repr__(self):
+        return f"Experiment with object id: {id(self)}."
 
 
 def generate_initial_params_lhs(num_samples: int, p_bounds: np.ndarray) -> np.ndarray:
