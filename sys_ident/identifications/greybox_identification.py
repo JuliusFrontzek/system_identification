@@ -4,11 +4,16 @@ from sys_ident.utils import (
     covariance,
     cross_covariance,
     Experiment,
+    plot_covariance,
+    plot_cross_covariance,
 )
 import matplotlib.pyplot as plt
 import numpy as np
 
-from sys_ident.identifications import Optimization
+from sys_ident.identifications import (
+    OptimizationData,
+    run_multiple_optimizations,
+)
 from sys_ident.models import Monocopter
 from sys_ident.simulations import simulate_experiment
 from sys_ident.utils import generate_initial_params_lhs
@@ -56,6 +61,7 @@ def main():
     identification_signal_handler.filter_signals_butterworth(6, 0.5)
     identification_signal_handler.down_sample(10)
     validation_signal_handler.down_sample(10)
+    identification_signal_handler.move_signal("y", 0.6, False)
 
     phi_0 = identification_signal_handler.y[0]
     phi_dot_0 = (
@@ -64,9 +70,16 @@ def main():
 
     x_0 = np.array([phi_0, phi_dot_0])
 
-    # p_0 = np.array([60.0, 1100.0, 0.0])
+    p_0 = np.array([60.0, 1100.0, 0.0])
 
+    # plot_cross_covariance(
+    #     identification_signal_handler.t,
+    #     identification_signal_handler.u,
+    #     identification_signal_handler.y,
+    # )
     # plt.plot(covariance(identification_signal_handler.y))
+    # identification_signal_handler.show_signals(["u", "y"])
+
     # plt.plot(
     #     cross_covariance(
     #         identification_signal_handler.u, identification_signal_handler.y
@@ -86,13 +99,11 @@ def main():
 
     monocopter = Monocopter()
     p_0 = generate_initial_params_lhs(
-        num_samples=10, p_bounds=np.array([[5.0, 100.0], [1050.0, 1500.0], [0.0, 10.0]])
+        num_samples=20,
+        p_bounds=np.array([[1.0, 1000.0], [100.0, 10000.0], [0.0, 100.0]]),
     )
-    optimization = Optimization(p_0, experiments, monocopter, "MLE")
-
-    optimization_result = optimization.run(max_iter=200)
-    print(f"Optimal parameters: {optimization_result}")
-    # optimization_result = np.array([60.0, 1100.0, 0.0])
+    optimization_data = OptimizationData(experiments, monocopter, "MLE")
+    optimization_result = run_multiple_optimizations(optimization_data, p_0, 50)
 
     fig, ax = plt.subplots()
     ax.plot(experiments[0].t, experiments[0].y, label="Ground truth")
