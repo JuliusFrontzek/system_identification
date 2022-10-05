@@ -1,7 +1,7 @@
 from sys_ident.utils import Experiment
 from sys_ident.models import BaseModel
 import numpy as np
-from scipy.integrate import solve_ivp
+from scipy.integrate import odeint
 
 
 def simulate_experiment(experiment: Experiment, model: BaseModel, params: np.ndarray):
@@ -13,15 +13,13 @@ def simulate_experiment(experiment: Experiment, model: BaseModel, params: np.nda
             experiment.t[idx_time - 1],
             experiment.t[idx_time],
         )
-        sol = solve_ivp(
+        sol = odeint(
             model.ode,
-            tspan,
             x_0,
+            tspan,
             args=(experiment.u[idx_time], params),
-            t_eval=tspan,
-            dense_output=False,
         )
-        x_0 = sol.y[-1]
+        x_0 = sol[1]
         y_sim[idx_time] = model.experiment_equation(x_0)
 
     return y_sim
