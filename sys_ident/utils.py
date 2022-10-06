@@ -70,35 +70,63 @@ def plot_cross_covariance(t: np.ndarray, X: np.ndarray, Y: np.ndarray) -> None:
     plt.show()
 
 
+def read_csv_as_array(
+    directory: str, file_name: str, delimiter: str = ","
+) -> np.ndarray:
+    """
+    Reads a csv file that contains a time series and returns a numpy array of the time series.
+    """
+    if file_name == "":
+        return
+    full_file_name = os.path.join(directory, file_name)
+    return np.genfromtxt(full_file_name, delimiter=delimiter)
+
+
 class SignalHandler:
+    signal_names = ["u", "y", "w"]
+
     def __init__(
         self,
         *,
-        signal_names: dict[str],
-        signals_directory: str,
+        u_y_w_t_file_names: dict[str] = None,
+        signals_directory: str = None,
+        u_y_w_t: list[np.ndarray] = None,
     ):
-        for signal_name, signal_file_name in signal_names.items():
-            signal_full_file_name = os.path.join(signals_directory, signal_file_name)
-            setattr(
-                self, signal_name, np.genfromtxt(signal_full_file_name, delimiter=",")
-            )
-
-        self.signal_names = list(signal_names.keys())
-        assert hasattr(self, "t"), "A time signal must be provided"
+        if isinstance(u_y_w_t, list):
+            self.u = u_y_w_t[0]
+            self.y = u_y_w_t[1]
+            self.w = u_y_w_t[2]
+            self.t = u_y_w_t[3]
+        else:
+            self.u = read_csv_as_array(signals_directory, u_y_w_t_file_names["u"])
+            self.y = read_csv_as_array(signals_directory, u_y_w_t_file_names["y"])
+            self.w = read_csv_as_array(signals_directory, u_y_w_t_file_names["w"])
+            self.t = read_csv_as_array(signals_directory, u_y_w_t_file_names["t"])
 
     @property
-    def sampling_step(self):
+    def sampling_step(self) -> float:
         return self.t[1] - self.t[0]
 
     @property
-    def sampling_frequency(self):
+    def sampling_frequency(self) -> float:
         return 1.0 / self.sampling_step
+
+    @property
+    def y_0(self) -> float:
+        return self.y[0]
+
+    @property
+    def y_dot_0(self) -> float:
+        return (self.y[1] - self.y[0]) / (self.t[1] - self.t[0])
 
     def down_sample(self, n_th_element: int):
         for signal_name in self.signal_names:
             signal = getattr(self, signal_name)
+            if signal is None:
+                continue
             signal = signal[::n_th_element]
             setattr(self, signal_name, signal)
+        self.t = self.t[::n_th_element]
 
     def filter_signals_by_time(self, start: float, end: float):
         start_idx = np.abs(self.t - start).argmin()
@@ -106,21 +134,23 @@ class SignalHandler:
 
         for signal_name in self.signal_names:
             signal = getattr(self, signal_name)
+            if signal is None:
+                continue
             signal = signal[start_idx:end_idx]
             setattr(self, signal_name, signal)
+
+        self.t = self.t[start_idx:end_idx]
 
     def show_signals(self, signal_names: list[str] = None):
         fig, ax = plt.subplots()
         if signal_names is None:
-            signal_names = self.signal_names.copy()
-            signal_names.remove("t")
+            signal_names = self.signal_names
 
         for signal_name in signal_names:
             ax.plot(self.t, getattr(self, signal_name), label=signal_name)
 
         ax.legend()
-
-        return fig
+        plt.show()
 
     def move_signal(self, signal_name: str, delta_time: float, delay: bool):
         """
@@ -136,27 +166,31 @@ class SignalHandler:
                 If True, the signal will be delayed, i.e. moved to the right on the time axis.
                 If False, the signal will be advanced, i.e. moved to the left on the time axis.
         """
-        if signal_name == "t":
-            # It is not allowed to move the time but only actual signals.
-            return
 
         num_indices_to_move = round(delta_time / self.sampling_step)
         if delay:
             for signal_name_ in self.signal_names:
                 signal_ = getattr(self, signal_name_)
+                if signal_ is None:
+                    continue
                 if signal_name_ == signal_name:
                     signal_ = signal_[:-num_indices_to_move]
                 else:
                     signal_ = signal_[num_indices_to_move:]
                 setattr(self, signal_name_, signal_)
+
+            self.t = self.t[num_indices_to_move:]
         else:
             for signal_name_ in self.signal_names:
                 signal_ = getattr(self, signal_name_)
+                if signal_ is None:
+                    continue
                 if signal_name_ == signal_name:
                     signal_ = signal_[num_indices_to_move:]
                 else:
                     signal_ = signal_[:-num_indices_to_move]
                 setattr(self, signal_name_, signal_)
+            self.t = self.t[:-num_indices_to_move]
 
     def filter_signals_butterworth(self, order: int, cut_off_freq_mult_nyquist: float):
         """
@@ -179,11 +213,12 @@ class SignalHandler:
         first_n_data_points_to_remove = 10
 
         for signal_name in self.signal_names:
-            if not signal_name == "t":
-                signal_ = getattr(self, signal_name)
-                filtered_signal = signal.sosfilt(sos, signal_)
-                filtered_signal = filtered_signal[first_n_data_points_to_remove:]
-                setattr(self, signal_name, filtered_signal)
+            signal_ = getattr(self, signal_name)
+            if signal_ is None:
+                continue
+            filtered_signal = signal.sosfilt(sos, signal_)
+            filtered_signal = filtered_signal[first_n_data_points_to_remove:]
+            setattr(self, signal_name, filtered_signal)
 
         self.t = self.t[first_n_data_points_to_remove:]
 
@@ -195,16 +230,35 @@ class SignalHandler:
         f, Pxx_den = signal.periodogram(signal_, self.sampling_frequency)
         plt.semilogy(f, Pxx_den)
 
+    def add_noise(
+        self, mean: float, std_dev: float, in_place: bool = False
+    ) -> np.ndarray:
+        """
+        Adds noise to signal y.
+
+        Params:
+            mean:       Float that represents the mean of the noise.
+            std_dev:    Non-negative float that defines the noise's standard deviation.
+            in_place:   Boolean that specifies whether or not to change the experiment's y-value
+                        in place or not. Default is False.
+
+        Returns:
+            A 1D-Numpy array representing the noisy signal.
+        """
+        noise = np.random.normal(mean, std_dev, self.y.shape[0])
+        new_y = self.y + noise
+        if in_place:
+            self.y = new_y
+        return new_y
+
 
 @dataclass
 class Experiment:
-    t: np.ndarray
-    u: np.ndarray
-    y: np.ndarray
+    signal_handler: SignalHandler
     x_0: np.ndarray
 
     def __str__(self):
-        return f"Experiment with {self.t.shape[0]} datapoints."
+        return f"Experiment with {self.signal_handler.t.shape[0]} datapoints."
 
     def __repr__(self):
         return f"Experiment with object id: {id(self)}."
@@ -218,9 +272,10 @@ def generate_initial_params_lhs(num_samples: int, p_bounds: np.ndarray) -> np.nd
                         the lower bounds, column 1 the upper bounds.
 
         Returns:
-            A 2D-Numpy array. Each row represents a sample and contains n columns for the n parameters provided.
+            A nested list of parameter 'vectors'. Each row represents a sample and contains n columns for the n parameters provided.
     """
     num_params = p_bounds.shape[0]
-    return p_bounds[:, 0] + lhs(
+    params = p_bounds[:, 0] + lhs(
         num_params, samples=num_samples, criterion="maximin"
     ) * (p_bounds[:, 1] - p_bounds[:, 0])
+    return params.tolist()
