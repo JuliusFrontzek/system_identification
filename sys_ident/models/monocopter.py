@@ -13,7 +13,7 @@ class Monocopter(BaseModel):
             self.l / 2 * self.m * self.g * np.sin(self.alpha)
         )
 
-    def ode(self, x: np.ndarray, t: float, u: float, params: np.ndarray) -> np.ndarray:
+    def ode(self, x: np.ndarray, t: float, u: float, params: list) -> np.ndarray:
         """
         Model parameters:
             b:  Combines the rotational moment of inertia of the monocopter
@@ -38,7 +38,7 @@ class Monocopter(BaseModel):
         )
         return np.array([dphi_dt, dphi2_dt2])
 
-    def experiment_equation(self, x: np.ndarray) -> float:
+    def measurement_equation(self, x: np.ndarray) -> float:
         # Define states
         phi = x[0]
 
