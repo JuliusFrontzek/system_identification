@@ -13,7 +13,7 @@ class Monocopter(BaseModel):
             self.l / 2 * self.m * self.g * np.sin(self.alpha)
         )
 
-    def ode(self, x: np.ndarray, t: float, u: float, params: list) -> np.ndarray:
+    def ode(self, x: np.ndarray, t: float, u: float, params: np.ndarray) -> np.ndarray:
         """
         Model parameters:
             b:  Combines the rotational moment of inertia of the monocopter
