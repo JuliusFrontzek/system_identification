@@ -147,7 +147,10 @@ class SignalHandler:
             signal_names = self.signal_names
 
         for signal_name in signal_names:
-            ax.plot(self.t, getattr(self, signal_name), label=signal_name)
+            signal = getattr(self, signal_name)
+            if signal is None:
+                continue
+            ax.plot(self.t, signal, label=signal_name)
 
         ax.legend()
         plt.show()
@@ -230,11 +233,11 @@ class SignalHandler:
         f, Pxx_den = signal.periodogram(signal_, self.sampling_frequency)
         plt.semilogy(f, Pxx_den)
 
-    def add_noise(
+    def add_gaussian_noise(
         self, mean: float, std_dev: float, in_place: bool = False
     ) -> np.ndarray:
         """
-        Adds noise to signal y.
+        Adds gaussian noise to signal y.
 
         Params:
             mean:       Float that represents the mean of the noise.
@@ -278,4 +281,4 @@ def generate_initial_params_lhs(num_samples: int, p_bounds: np.ndarray) -> np.nd
     params = p_bounds[:, 0] + lhs(
         num_params, samples=num_samples, criterion="maximin"
     ) * (p_bounds[:, 1] - p_bounds[:, 0])
-    return params.tolist()
+    return params
