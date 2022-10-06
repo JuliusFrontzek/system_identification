@@ -8,12 +8,12 @@ from scipy.integrate import odeint
 class BaseModel(ABC):
     """
     Abstract base class for models used to identify systems.
-    In addition to the subsequently specified, obligatory methods, this class may contain attributes for model dimensions, etc.
+    In addition to some of the subsequently specified methods, a subclass may contain attributes for model dimensions, etc.
     """
 
     def ode(self, x: np.ndarray, t: float, u: float, params: list) -> np.ndarray:
         """
-        A model must implement an ode method which represents the model's ordinary differential equation.
+        Ode method which represents the model's ordinary differential equation.
 
         Params:
             x:      1D-Numpy array representing the model's state.
@@ -27,15 +27,11 @@ class BaseModel(ABC):
         raise NotImplementedError
 
     def dlti(self, params: list) -> dlti:
-        try:
-            return self.lti(params).to_discrete()
-        except NotImplementedError:
-            raise
+        raise NotImplementedError
 
-    @abstractmethod
     def measurement_equation(self, x: np.ndarray) -> float:
         """
-        A model must implement a measurement equation method.
+        Measurement equation method. Returns the part of the state vector which is being measured.
 
         Params:
             x:  A 1D-Numpy array representing the state of the model.
@@ -43,7 +39,7 @@ class BaseModel(ABC):
         Returns:
             Float that represents the measured value. Currently only SISO models are considered.
         """
-        pass
+        raise NotImplementedError
 
     def simulate_experiment(self, experiment: Experiment, params: list):
         try:
