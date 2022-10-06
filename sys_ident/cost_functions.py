@@ -3,7 +3,9 @@ from .utils import Experiment
 from .models import BaseModel
 
 
-def cost_MLE(params: list, experiments: list[Experiment], model: BaseModel, *args):
+def cost_MLE(
+    params: np.ndarray, experiments: list[Experiment], model: BaseModel, *args
+):
     """
     Cost function Maximum likelihood estimation
     """
@@ -35,7 +37,7 @@ def cost_MLE(params: list, experiments: list[Experiment], model: BaseModel, *arg
 
 
 def cost_WLS(
-    params: list, experiments: list[Experiment], model: BaseModel, C: np.ndarray
+    params: np.ndarray, experiments: list[Experiment], model: BaseModel, C: np.ndarray
 ):
     invC = np.linalg.inv(C)
     I = 0
