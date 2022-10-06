@@ -272,7 +272,7 @@ def generate_initial_params_lhs(num_samples: int, p_bounds: np.ndarray) -> np.nd
                         the lower bounds, column 1 the upper bounds.
 
         Returns:
-            A nested list of parameter 'vectors'. Each row represents a sample and contains n columns for the n parameters provided.
+            A list of parameter 'vectors' (lists themselves). Each row represents a sample and contains n columns for the n parameters provided.
     """
     num_params = p_bounds.shape[0]
     params = p_bounds[:, 0] + lhs(
