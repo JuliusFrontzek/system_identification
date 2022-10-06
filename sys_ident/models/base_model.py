@@ -11,7 +11,7 @@ class BaseModel(ABC):
     In addition to some of the subsequently specified methods, a subclass may contain attributes for model dimensions, etc.
     """
 
-    def ode(self, x: np.ndarray, t: float, u: float, params: list) -> np.ndarray:
+    def ode(self, x: np.ndarray, t: float, u: float, params: np.ndarray) -> np.ndarray:
         """
         Ode method which represents the model's ordinary differential equation.
 
@@ -23,10 +23,10 @@ class BaseModel(ABC):
         """
         raise NotImplementedError
 
-    def lti(self, params: list) -> lti:
+    def lti(self, params: np.ndarray) -> lti:
         raise NotImplementedError
 
-    def dlti(self, params: list) -> dlti:
+    def dlti(self, params: np.ndarray) -> dlti:
         raise NotImplementedError
 
     def measurement_equation(self, x: np.ndarray) -> float:
@@ -41,18 +41,18 @@ class BaseModel(ABC):
         """
         raise NotImplementedError
 
-    def simulate_experiment(self, experiment: Experiment, params: list):
+    def simulate_experiment(self, experiment: Experiment, params: np.ndarray):
         try:
             return self.lti(params).output(
                 experiment.signal_handler.u, experiment.signal_handler.t, experiment.x_0
-            )
+            )[1]
         except NotImplementedError:
             pass
 
         try:
             return self.dlti(params).output(
                 experiment.signal_handler.u, experiment.signal_handler.t, experiment.x_0
-            )
+            )[1]
         except NotImplementedError:
             pass
 
