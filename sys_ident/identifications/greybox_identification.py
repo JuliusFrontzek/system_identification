@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from sys_ident.identifications import (
-    OptimizationData,
+    MultipleOptimizationsData,
     run_multiple_optimizations,
 )
 from sys_ident.models import Monocopter
@@ -99,11 +99,13 @@ def main():
 
     monocopter = Monocopter()
     p_0 = generate_initial_params_lhs(
-        num_samples=20,
+        num_samples=10,
         p_bounds=np.array([[1.0, 1000.0], [100.0, 10000.0], [0.0, 100.0]]),
     )
-    optimization_data = OptimizationData(experiments, monocopter, "MLE")
-    optimization_result = run_multiple_optimizations(optimization_data, p_0, 50)
+    optimization_data = MultipleOptimizationsData(
+        experiments, monocopter, "MLE", p_0, max_iter=50
+    )
+    optimization_result = run_multiple_optimizations(optimization_data)
 
     fig, ax = plt.subplots()
     ax.plot(experiments[0].t, experiments[0].y, label="Ground truth")
