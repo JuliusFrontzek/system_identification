@@ -34,7 +34,6 @@ def cost_MLE(
     # cost function
     # log(det(C)) is negative, the determinant of C, det(C), shall be minimized however
     I = np.log(np.linalg.det(C))
-    print(I)
     return I
 
 
