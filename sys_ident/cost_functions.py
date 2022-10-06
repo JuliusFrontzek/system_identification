@@ -1,12 +1,9 @@
 import numpy as np
 from .utils import Experiment
-from .simulations import simulate_experiment
 from .models import BaseModel
 
 
-def cost_MLE(
-    params: np.ndarray, experiments: list[Experiment], model: BaseModel, *args
-):
+def cost_MLE(params: list, experiments: list[Experiment], model: BaseModel, *args):
     """
     Cost function Maximum likelihood estimation
     """
@@ -15,10 +12,10 @@ def cost_MLE(
     N = 0
     for experiment in experiments:
         # Simulation
-        y_sim = simulate_experiment(experiment, model, params)
+        y_sim = model.simulate_experiment(experiment, params)
 
         # Difference between simulation and experiment
-        diff = experiment.y - y_sim
+        diff = experiment.signal_handler.y - y_sim
 
         # Estimation of covariance matrix
         # Sum across the individual experiments
@@ -38,16 +35,16 @@ def cost_MLE(
 
 
 def cost_WLS(
-    params: np.ndarray, experiments: list[Experiment], model: BaseModel, C: np.ndarray
+    params: list, experiments: list[Experiment], model: BaseModel, C: np.ndarray
 ):
     invC = np.linalg.inv(C)
     I = 0
     for experiment in experiments:
         # Simulation
-        y_sim = simulate_experiment(experiment, model, params)
+        y_sim = model.simulate_experiment(experiment, params)
 
         # Difference between simulation and experiment
-        diff = experiment.y - y_sim
+        diff = experiment.signal_handler.y - y_sim
 
         # Cost function
         I = (

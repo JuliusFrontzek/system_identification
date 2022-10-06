@@ -104,12 +104,12 @@ def run_multiple_optimizations(optimization_data: MultipleOptimizationsData):
             optimization_data.experiments,
             optimization_data.model,
             optimization_data.cost_function,
-            optimization_data.p_0[i],
+            p_0_,
             optimization_data.max_iter,
             optimization_data.cov_mat,
             optimization_data.p_bounds,
         )
-        for i in range(optimization_data.p_0.shape[0])
+        for p_0_ in optimization_data.p_0
     ]
 
     with Pool() as pool:

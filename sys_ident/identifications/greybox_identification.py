@@ -15,7 +15,6 @@ from sys_ident.identifications import (
     run_multiple_optimizations,
 )
 from sys_ident.models import Monocopter
-from sys_ident.simulations import simulate_experiment
 from sys_ident.utils import generate_initial_params_lhs
 
 
@@ -32,9 +31,9 @@ def main():
     """
 
     identification_signal_handler = SignalHandler(
-        signal_names={
+        u_y_w_t_file_names={
             "u": "u.csv",
-            "w": "w.csv",
+            "w": "",
             "y": "y.csv",
             "t": "t.csv",
         },
@@ -42,7 +41,7 @@ def main():
     )
 
     validation_signal_handler = SignalHandler(
-        signal_names={
+        u_y_w_t_file_names={
             "u": "u_v.csv",
             "w": "w_v.csv",
             "y": "y_v.csv",
@@ -63,14 +62,12 @@ def main():
     validation_signal_handler.down_sample(10)
     identification_signal_handler.move_signal("y", 0.6, False)
 
-    phi_0 = identification_signal_handler.y[0]
-    phi_dot_0 = (
-        identification_signal_handler.y[1] - identification_signal_handler.y[0]
-    ) / (identification_signal_handler.t[1] - identification_signal_handler.t[0])
+    phi_0 = identification_signal_handler.y_0
+    phi_dot_0 = identification_signal_handler.y_dot_0
 
     x_0 = np.array([phi_0, phi_dot_0])
 
-    p_0 = np.array([60.0, 1100.0, 0.0])
+    p_0 = [60.0, 1100.0, 0.0]
 
     # plot_cross_covariance(
     #     identification_signal_handler.t,
@@ -90,9 +87,7 @@ def main():
 
     experiments = [
         Experiment(
-            identification_signal_handler.t,
-            identification_signal_handler.u,
-            identification_signal_handler.y,
+            identification_signal_handler,
             x_0,
         )
     ]
@@ -103,16 +98,22 @@ def main():
         p_bounds=np.array([[1.0, 1000.0], [100.0, 10000.0], [0.0, 100.0]]),
     )
     optimization_data = MultipleOptimizationsData(
-        experiments, monocopter, "MLE", p_0, max_iter=50
+        experiments, monocopter, "MLE", p_0, max_iter=10
     )
     optimization_result = run_multiple_optimizations(optimization_data)
 
     fig, ax = plt.subplots()
-    ax.plot(experiments[0].t, experiments[0].y, label="Ground truth")
-    ax.plot(experiments[0].t, experiments[0].u, label="Input")
+    ax.plot(
+        experiments[0].signal_handler.t,
+        experiments[0].signal_handler.y,
+        label="Ground truth",
+    )
+    ax.plot(
+        experiments[0].signal_handler.t, experiments[0].signal_handler.u, label="Input"
+    )
     for idx, result in enumerate(optimization_result):
-        y = simulate_experiment(experiments[0], monocopter, result)
-        ax.plot(experiments[0].t, y, label=f"Simulation {idx+1}")
+        y = monocopter.simulate_experiment(experiments[0], result)
+        ax.plot(experiments[0].signal_handler.t, y, label=f"Simulation {idx+1}")
 
     ax.legend()
     plt.show()
