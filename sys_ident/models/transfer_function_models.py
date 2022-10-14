@@ -32,7 +32,7 @@ class FirstOrderContinuousTFModel(BaseContinuousTFModel):
             params:     1D-Numpy array of length 2. The first value represents the transfer
                         function's K value, the second one tau.
         """
-        assert params.shape[0] == 2, "Params has the wrong sahpe"
+        assert params.shape[0] == 2, "Params has the wrong shape"
         numerator = [params[0]]
         denominator = [params[1:], 1.0]
         return super().lti([numerator, denominator])
@@ -45,7 +45,7 @@ class SecondOrderContinuousTFModel(BaseContinuousTFModel):
             params:     1D-Numpy array of length 3. The first value represents the transfer
                         function's K value, the second one its omega value and the third one its ceta value
         """
-        assert params.shape[0] == 3, "Params has the wrong sahpe"
+        assert params.shape[0] == 3, "Params has the wrong shape"
         numerator = [params[0] * params[1] ** 2]
         denominator = [1.0, 2 * params[1] * params[2], params[1] ** 2]
         return super().lti([numerator, denominator])
