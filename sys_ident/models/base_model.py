@@ -16,10 +16,10 @@ class BaseModel(ABC):
         Ode method which represents the model's ordinary differential equation.
 
         Params:
-            x:      1D-Numpy array representing the model's state.
-            t:      Float representing the current time
-            u:      Float representing the current input into the model. Currently only SISO models are considered.
-            params:      1D-Numpy array representing the model's parameter vector.
+            x:          1D-Numpy array representing the model's state.
+            t:          Float representing the current time
+            u:          Float representing the current input into the model. Currently only SISO models are considered.
+            params:     1D-Numpy array representing the model's parameter vector.
         """
         raise NotImplementedError
 
@@ -41,7 +41,9 @@ class BaseModel(ABC):
         """
         raise NotImplementedError
 
-    def simulate_experiment(self, experiment: Experiment, params: np.ndarray):
+    def simulate_experiment(
+        self, experiment: Experiment, params: np.ndarray
+    ) -> np.ndarray:
         try:
             return self.lti(params).output(
                 experiment.signal_handler.u, experiment.signal_handler.t, experiment.x_0
