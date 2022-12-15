@@ -4,6 +4,7 @@ import os
 import matplotlib.pyplot as plt
 from scipy import signal
 from pyDOE import lhs
+import random
 
 
 def auto_corr(x):
@@ -248,6 +249,7 @@ class SignalHandler:
         Returns:
             A 1D-Numpy array representing the noisy signal.
         """
+        np.random.seed(random.randint(0, 1e9))
         noise = np.random.normal(mean, std_dev, self.y.shape[0])
         new_y = self.y + noise
         if in_place:
