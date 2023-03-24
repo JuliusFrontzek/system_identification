@@ -148,4 +148,16 @@ class GreyBoxIdentification:
                 )
             )
 
-        return np.array([results])
+        return self._find_optimal_params(np.array(results))
+
+    def _find_optimal_params(self, param_sets: np.ndarray, *args) -> np.ndarray:
+        """
+        Given a set of identified parameters, this method finds the best one (subject to the respective cost function).
+        """
+        costs = np.zeros(param_sets.shape[0])
+        for idx, params in enumerate(param_sets):
+            costs[idx] = self.cost_functions[self.cost_function](
+                params, self.identification_experiments, self.model, *args
+            )
+        idx_min = np.argmin(costs)
+        return param_sets[idx_min]
