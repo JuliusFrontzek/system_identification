@@ -42,6 +42,11 @@ def cost_WLS(
 ):
     invC = np.linalg.inv(C)
     I = 0
+
+    assert (
+        len(experiments) == 1
+    ), "WLS cost function currently only implemented for single experiments."
+
     for experiment in experiments:
         # Simulation
         y_sim = model.simulate_experiment(experiment, params)
