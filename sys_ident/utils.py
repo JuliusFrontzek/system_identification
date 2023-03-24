@@ -120,6 +120,16 @@ class SignalHandler:
     def y_dot_0(self) -> float:
         return (self.y[1] - self.y[0]) / (self.t[1] - self.t[0])
 
+    @property
+    def num_signals(self) -> int:
+        num = 0
+        for signal_name in self.signal_names:
+            signal = getattr(self, signal_name)
+            if signal is not None:
+                num += 1
+
+        return num
+
     def down_sample(self, n_th_element: int):
         for signal_name in self.signal_names:
             signal = getattr(self, signal_name)
@@ -143,17 +153,37 @@ class SignalHandler:
         self.t = self.t[start_idx:end_idx]
 
     def show_signals(self, signal_names: list[str] = None):
-        fig, ax = plt.subplots()
+        _, host = plt.subplots()
+        host.set_xlabel("Time")
         if signal_names is None:
             signal_names = self.signal_names
+            num_signals = self.num_signals
+        else:
+            num_signals = len(signal_names)
 
-        for signal_name in signal_names:
+        cmap = plt.cm.get_cmap("viridis", num_signals)
+        colors = cmap(np.linspace(0, 1, num_signals))
+
+        handles = []
+
+        for idx, signal_name in enumerate(signal_names):
             signal = getattr(self, signal_name)
             if signal is None:
                 continue
-            ax.plot(self.t, signal, label=signal_name)
 
-        ax.legend()
+            if idx >= 1:
+                ax = host.twinx()
+                ax.spines["right"].set_position(("outward", 60 * (idx - 1)))
+            else:
+                ax = host
+
+            plot_handle = ax.plot(self.t, signal, color=colors[idx], label=signal_name)
+            ax.yaxis.label.set_color(plot_handle[0].get_color())
+            ax.set_ylabel(signal_name)
+
+            handles.append(plot_handle[0])
+
+        host.legend(handles=handles, loc="best")
         plt.show()
 
     def move_signal(self, signal_name: str, delta_time: float, delay: bool):
